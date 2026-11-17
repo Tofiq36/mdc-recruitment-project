@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Upload, Briefcase, CheckCircle, CheckCircle2, AlertCircle, Loader2, User, Mail, History, FileText, Code, Users, XCircle, FilePlus, Search, Trash2, EyeOff } from 'lucide-react';
+import { Upload, Briefcase, CheckCircle, CheckCircle2, AlertCircle, Loader2, User, Mail, History, FileText, Code, Users, XCircle, FilePlus, Search, Trash2, EyeOff, Layout } from 'lucide-react';
 import RadarChartUi from './components/RadarChartUi';
 import Leaderboard from './components/Leaderboard';
+import KanbanBoard from './components/KanbanBoard';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'analyze' | 'history'>('analyze');
+  const [activeTab, setActiveTab] = useState<'analyze' | 'history' | 'pipeline'>('analyze');
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   
@@ -164,6 +165,12 @@ export default function App() {
               className={`flex items-center gap-2 px-6 py-2 rounded-full font-semibold transition-all shadow-sm ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
             >
               <History size={18} /> Candidate History
+            </button>
+            <button 
+              onClick={() => setActiveTab('pipeline')}
+              className={`flex items-center gap-2 px-6 py-2 rounded-full font-semibold transition-all shadow-sm ${activeTab === 'pipeline' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              <Layout size={18} /> ATS Pipeline
             </button>
           </div>
         </div>
@@ -454,6 +461,13 @@ export default function App() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* PIPELINE / KANBAN TAB */}
+        {activeTab === 'pipeline' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <KanbanBoard />
           </div>
         )}
 

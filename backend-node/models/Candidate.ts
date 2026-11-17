@@ -29,7 +29,11 @@ const candidateSchema = new mongoose.Schema({
         systemDesign: { type: Number, default: 0 },
         softSkills: { type: Number, default: 0 }
     },
-    
+    status: { 
+        type: String, 
+        enum: ['Applied', 'Shortlisted', 'Interview', 'Rejected'], 
+        default: 'Applied' 
+    },
     createdAt: { type: Date, default: Date.now }
 });
 
