@@ -34,7 +34,7 @@ const calculateCosineSimilarity = (textA: string, textB: string): number => {
 
     const termFreqMap = (tokens: string[]) => {
         const map: Record<string, number> = {};
-        tokens.forEach(w => (map[w] = (map[w] || 0) + 1));
+        tokens.forEach((w: string) => (map[w] = (map[w] || 0) + 1));
         return map;
     };
 
@@ -44,7 +44,7 @@ const calculateCosineSimilarity = (textA: string, textB: string): number => {
     const uniqueWords = new Set([...Object.keys(mapA), ...Object.keys(mapB)]);
     let dotProduct = 0, magA = 0, magB = 0;
 
-    uniqueWords.forEach(word => {
+    uniqueWords.forEach((word: string) => {
         const vA = mapA[word] || 0;
         const vB = mapB[word] || 0;
         dotProduct += vA * vB;

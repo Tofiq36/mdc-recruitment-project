@@ -49,6 +49,8 @@
     "moduleResolution": "NodeNext",
     "rootDir": ".",
     "outDir": "./dist",
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
