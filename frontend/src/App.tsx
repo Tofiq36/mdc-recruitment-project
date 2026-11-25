@@ -4,6 +4,8 @@ import RadarChartUi from './components/RadarChartUi';
 import Leaderboard from './components/Leaderboard';
 import KanbanBoard from './components/KanbanBoard';
 
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'analyze' | 'history' | 'pipeline'>('analyze');
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -30,7 +32,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeTab === 'history') {
-      fetch('http://localhost:5000/api/candidates')
+      fetch(`${API_BASE}/api/candidates`)
         .then(res => res.json())
         .then(data => setHistory(data))
         .catch(err => console.error("Failed to fetch history:", err));
@@ -59,7 +61,7 @@ export default function App() {
     formData.append('jobDescription', jobDescription);
     formData.append('jobTitle', jobDescription.split('\n')[0].substring(0, 30) + '...'); 
 
-    const endpoint = isBulkMode ? 'http://localhost:5000/api/analyze-bulk' : 'http://localhost:5000/api/analyze';
+    const endpoint = isBulkMode ? `${API_BASE}/api/analyze-bulk` : `${API_BASE}/api/analyze`;
 
     if (isBulkMode) {
       filesToSubmit.forEach(file => formData.append('resumes', file));
@@ -119,7 +121,7 @@ export default function App() {
     
     if (isConfirmed) {
       try {
-        const res = await fetch(`http://localhost:5000/api/candidates/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/candidates/${id}`, { method: 'DELETE' });
         if (res.ok) {
           setHistory(prev => prev.filter(candidate => candidate._id !== id));
         } else {

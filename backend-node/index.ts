@@ -17,7 +17,7 @@ app.use(express.json());
 // Create uploads folder if it doesn't exist
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Make the uploads folder publicly accessible via URL

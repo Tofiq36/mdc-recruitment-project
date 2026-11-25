@@ -18,6 +18,14 @@ dotenv.config();
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const getBaseUrl = (): string => {
+    const rawUrl =
+        process.env.RENDER_EXTERNAL_URL ||
+        process.env.BASE_URL ||
+        `http://localhost:${process.env.PORT || 5000}`;
+    return rawUrl.replace(/\/$/, '');
+};
+
 // --- HELPER: COSINE SIMILARITY BETWEEN TWO TEXTS ---
 const calculateCosineSimilarity = (textA: string, textB: string): number => {
     const tokenizer = new natural.WordTokenizer();
@@ -408,7 +416,7 @@ router.post('/analyze', upload.single('resume'), async (req: Request, res: Respo
         const safeFilename = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
         const savedFileName = `${uniqueSuffix}-${safeFilename}`;
         fs.writeFileSync(`uploads/${savedFileName}`, file.buffer);
-        const pdfUrl = `http://localhost:5000/uploads/${savedFileName}`;
+        const pdfUrl = `${getBaseUrl()}/uploads/${savedFileName}`;
 
         let optimizedResumeText = "";
         try {
@@ -514,7 +522,7 @@ router.post('/analyze-bulk', upload.array('resumes', 10), async (req: Request, r
                 const safeFilename = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
                 const savedFileName = `${uniqueSuffix}-${safeFilename}`;
                 fs.writeFileSync(`uploads/${savedFileName}`, file.buffer);
-                const pdfUrl = `http://localhost:5000/uploads/${savedFileName}`;
+                const pdfUrl = `${getBaseUrl()}/uploads/${savedFileName}`;
 
                 let optimizedResumeText = "";
                 try {

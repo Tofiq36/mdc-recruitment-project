@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search } from 'lucide-react';
 
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+
 interface Candidate {
     _id: string;
     name: string;
@@ -23,7 +25,7 @@ const KanbanBoard: React.FC = () => {
 
     const fetchCandidates = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/candidates');
+            const res = await axios.get(`${API_BASE}/api/candidates`);
             const formattedData = res.data.map((c: any) => ({
                 ...c,
                 status: c.status || 'Applied'
@@ -37,7 +39,6 @@ const KanbanBoard: React.FC = () => {
     const handleDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData('candidateId', id);
         e.dataTransfer.effectAllowed = 'move';
-        // Add a slight transparency effect while dragging
         setTimeout(() => {
             (e.target as HTMLElement).classList.add('opacity-50');
         }, 0);
@@ -52,33 +53,25 @@ const KanbanBoard: React.FC = () => {
         const candidateId = e.dataTransfer.getData('candidateId');
         if (!candidateId) return;
 
-        // Optimistic UI Update
         setCandidates(prev => prev.map(c => 
             c._id === candidateId ? { ...c, status: newStatus } : c
         ));
 
-        // Update Backend MongoDB
         try {
-            console.log(`Sending PATCH request for ID: ${candidateId} with status: ${newStatus}`);
-            
-            const response = await axios.patch(`http://localhost:5000/api/candidates/${candidateId}/status`, {
+            const response = await axios.patch(`${API_BASE}/api/candidates/${candidateId}/status`, {
                 status: newStatus
             });
-            
             console.log("Save successful!", response.data);
-            
         } catch (error: any) {
-            // Force an alert to show up on your screen so we can see the hidden error!
             const errorMsg = error.response?.data?.error || error.message;
-            alert(`Backend Save Failed: ${errorMsg}\nCheck if candidateRoutes.ts is saved and the server restarted!`);
-            
+            alert(`Backend Save Failed: ${errorMsg}\nCheck if the backend server is running and reachable.`);
             console.error("Failed to update status", error);
-            fetchCandidates(); // Revert back since it failed
+            fetchCandidates();
         }
     };
 
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault(); // Required to allow dropping
+        e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
     };
 
@@ -88,7 +81,6 @@ const KanbanBoard: React.FC = () => {
         return 'text-red-700 bg-red-100 border-red-200';
     };
 
-    // 1. Search Filter Logic
     const filteredCandidates = candidates.filter(candidate => {
         const searchLower = searchQuery.toLowerCase();
         return (
@@ -100,7 +92,6 @@ const KanbanBoard: React.FC = () => {
 
     return (
         <div className="p-6 w-full min-h-screen bg-white rounded-2xl">
-            {/* Header & Search Bar */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-4">
                 <h2 className="text-2xl font-black text-gray-800">ATS Pipeline</h2>
                 
@@ -116,7 +107,6 @@ const KanbanBoard: React.FC = () => {
                 </div>
             </div>
             
-            {/* Kanban Columns */}
             <div className="flex flex-col md:flex-row gap-6 h-full overflow-x-auto pb-4">
                 {COLUMNS.map(column => (
                     <div 
@@ -125,7 +115,6 @@ const KanbanBoard: React.FC = () => {
                         onDrop={(e) => handleDrop(e, column)}
                         onDragOver={handleDragOver}
                     >
-                        {/* Column Header */}
                         <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
                             <h3 className="font-bold text-gray-700">{column}</h3>
                             <span className="bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full font-bold">
@@ -133,7 +122,6 @@ const KanbanBoard: React.FC = () => {
                             </span>
                         </div>
                         
-                        {/* Cards Container */}
                         <div className="space-y-3 min-h-[100px]">
                             {filteredCandidates
                                 .filter(c => c.status === column)
