@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Briefcase, CheckCircle, CheckCircle2, AlertCircle, Loader2, User, Mail, History, FileText, Code, Users, XCircle, FilePlus, Search, Trash2, EyeOff, Layout } from 'lucide-react';
+import { Upload, Briefcase, CheckCircle, CheckCircle2, AlertCircle, AlertTriangle, ShieldCheck, Loader2, User, Mail, History, FileText, Code, Users, XCircle, FilePlus, Search, Trash2, EyeOff, Layout, Sparkles } from 'lucide-react';
 import RadarChartUi from './components/RadarChartUi';
 import Leaderboard from './components/Leaderboard';
 import KanbanBoard from './components/KanbanBoard';
@@ -49,11 +49,6 @@ export default function App() {
       setError('Please upload at least one resume.');
       return;
     }
-    
-    if (!isBulkMode && (!candidateName || !candidateEmail)) {
-      setError('Please provide candidate name and email for single analysis.');
-      return;
-    }
 
     setLoading(true);
     setError('');
@@ -70,9 +65,9 @@ export default function App() {
       filesToSubmit.forEach(file => formData.append('resumes', file));
     } else {
       formData.append('resume', filesToSubmit[0]);
-      formData.append('candidateName', candidateName);
-      formData.append('candidateEmail', candidateEmail);
-      if (githubUsername) formData.append('githubUsername', githubUsername);
+      if (candidateName.trim()) formData.append('candidateName', candidateName.trim());
+      if (candidateEmail.trim()) formData.append('candidateEmail', candidateEmail.trim());
+      if (githubUsername.trim()) formData.append('githubUsername', githubUsername.trim());
     }
 
     try {
@@ -91,6 +86,8 @@ export default function App() {
         setBulkResults(data);
       } else {
         setResult(data);
+        if (data.name) setCandidateName(data.name);
+        if (data.email && !data.email.endsWith('@extracted.local')) setCandidateEmail(data.email);
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong.');
@@ -144,6 +141,12 @@ export default function App() {
     );
   });
 
+  const hasRedFlags = (flags?: string[]) =>
+    Array.isArray(flags) && flags.length > 0 && flags[0] !== "No major inconsistencies detected.";
+
+  const isMissingGithubFlag = (flag: string) =>
+    flag.toLowerCase().includes("github link / username missing");
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -151,7 +154,7 @@ export default function App() {
         {/* Header & Navigation */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">Enterprise Recruitment AI</h1>
-          <p className="text-gray-500 font-medium text-lg">Automated Skill-Gap Analysis & Bulk Screening</p>
+          <p className="text-gray-500 font-medium text-lg">Automated Skill-Gap Analysis, Authenticity Forensics & Screening</p>
           
           <div className="flex justify-center gap-4 pt-4">
             <button 
@@ -210,12 +213,24 @@ export default function App() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1"><User size={14} /> Name</label>
-                      <input type="text" className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={candidateName} onChange={(e) => setCandidateName(e.target.value)} />
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1"><User size={14} /> Name (Auto)</label>
+                      <input
+                        type="text"
+                        placeholder="Auto-fetched from PDF"
+                        className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={candidateName}
+                        onChange={(e) => setCandidateName(e.target.value)}
+                      />
                     </div>
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1"><Mail size={14} /> Email</label>
-                      <input type="email" className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={candidateEmail} onChange={(e) => setCandidateEmail(e.target.value)} />
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-1"><Mail size={14} /> Email (Auto)</label>
+                      <input
+                        type="email"
+                        placeholder="Auto-fetched from PDF"
+                        className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={candidateEmail}
+                        onChange={(e) => setCandidateEmail(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div>
@@ -290,14 +305,14 @@ export default function App() {
                     <CheckCircle size={40} className="text-gray-300" />
                   </div>
                   <p className="font-medium text-lg text-gray-500">System Ready</p>
-                  <p className="text-sm text-center max-w-sm">Upload files and start the AI engine to generate skill matrices and leaderboards.</p>
+                  <p className="text-sm text-center max-w-sm">Upload files and start the AI engine to generate skill matrices, authenticity checks, and role recommendations.</p>
                 </div>
               )}
 
               {loading && (
                 <div className="flex-1 flex flex-col items-center justify-center text-blue-500 space-y-4">
                   <Loader2 size={48} className="animate-spin" />
-                  <p className="font-bold text-lg animate-pulse">{isBulkMode ? 'Processing multiple PDFs concurrently...' : 'Evaluating GitHub & Resume Data...'}</p>
+                  <p className="font-bold text-lg animate-pulse">{isBulkMode ? 'Processing multiple PDFs concurrently...' : 'Extracting Resume Details, Evaluating GitHub & Role Fit...'}</p>
                 </div>
               )}
 
@@ -307,22 +322,120 @@ export default function App() {
 
               {result && !loading && !isBulkMode && (
                 <div className="space-y-6 animate-in fade-in duration-500 w-full">
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                    <div>
+                      <p className="text-base font-black text-gray-900">{result.name}</p>
+                      <p className="text-xs text-gray-500">{result.email}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                      Auto-Extracted Profile
+                    </span>
+                  </div>
+
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-1 text-center p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100 shadow-sm">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Overall Match</p>
                       <p className={`text-7xl font-black ${result.score > 75 ? 'text-green-500' : result.score > 50 ? 'text-yellow-500' : 'text-red-500'}`}>
                         {result.score}%
                       </p>
-                      {result.githubStats?.publicRepos > 0 && (
+                      {result.githubStats && (result.githubStats.publicRepos > 0 || result.githubUsername) && (
                         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-center gap-4 text-sm text-gray-600">
-                          <span className="flex items-center gap-1"><Code size={14}/> {result.githubStats.publicRepos} Repos</span>
-                          <span className="flex items-center gap-1"><Users size={14}/> {result.githubStats.followers} Followers</span>
+                          <span className="flex items-center gap-1"><Code size={14}/> {result.githubStats.publicRepos ?? 0} Repos</span>
+                          <span className="flex items-center gap-1"><Users size={14}/> {result.githubStats.followers ?? 0} Followers</span>
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
                       <RadarChartUi metrics={result.metrics} />
                     </div>
+                  </div>
+
+                  {/* ROLE COMPARISON & RECOMMENDED ROLES */}
+                  {result.recommendedRoles?.length > 0 && (
+                    <div className="p-5 rounded-xl border border-indigo-100 bg-indigo-50/40 space-y-3">
+                      <h3 className="font-extrabold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider">
+                        <Sparkles size={18} className="text-indigo-600" /> Role Match Comparison & Recommended Roles
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {result.recommendedRoles.map((item: any, idx: number) => (
+                          <div key={idx} className="bg-white p-3.5 rounded-xl border border-indigo-100 shadow-sm flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="font-bold text-sm text-gray-900">{item.role}</span>
+                                <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
+                                  item.matchScore >= 75
+                                    ? 'bg-green-100 text-green-700'
+                                    : item.matchScore >= 50
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {item.matchScore}%
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 leading-relaxed">{item.reason}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AUTHENTICITY & GITHUB FORENSICS PANEL */}
+                  <div className={`p-5 rounded-xl border ${hasRedFlags(result.redFlags) ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/60 border-emerald-200'}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                      <h3 className="font-extrabold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider">
+                        {hasRedFlags(result.redFlags) ? (
+                          <AlertTriangle size={18} className="text-amber-600" />
+                        ) : (
+                          <ShieldCheck size={18} className="text-emerald-600" />
+                        )}
+                        Authenticity & GitHub Forensics
+                      </h3>
+                      <span className={`text-xs font-black px-3 py-1 rounded-full border ${
+                        (result.authenticityScore ?? 100) >= 80
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : (result.authenticityScore ?? 100) >= 50
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-red-100 text-red-800 border-red-300'
+                      }`}>
+                        Authenticity Score: {result.authenticityScore ?? 100}%
+                      </span>
+                    </div>
+
+                    {result.githubStats?.topLanguages?.length > 0 && (
+                      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                        <span className="font-bold text-gray-600">GitHub Top Languages:</span>
+                        {result.githubStats.topLanguages.map((lang: string, i: number) => (
+                          <span key={i} className="bg-white text-gray-800 px-2.5 py-0.5 rounded-md border border-gray-200 font-semibold">
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <ul className="space-y-2 text-sm text-gray-800">
+                      {(result.redFlags || ["No major inconsistencies detected."]).map((flag: string, idx: number) => {
+                        const missingGithub = isMissingGithubFlag(flag);
+                        const isWarning = hasRedFlags(result.redFlags);
+                        return (
+                          <li
+                            key={idx}
+                            className={`flex items-start gap-2 p-2.5 rounded-lg border ${
+                              missingGithub
+                                ? 'bg-red-50 text-red-700 border-red-200 font-semibold'
+                                : isWarning
+                                ? 'bg-amber-50/90 text-amber-900 border-amber-200'
+                                : 'bg-white/80 text-gray-800 border-gray-100'
+                            }`}
+                          >
+                            <span className={`mt-0.5 font-bold ${missingGithub ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-emerald-600'}`}>
+                              •
+                            </span>
+                            <span>{flag}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
 
                   {result.summary && (
@@ -410,6 +523,7 @@ export default function App() {
                       <th className="p-4 font-bold border-b border-gray-200 rounded-tl-xl">Candidate</th>
                       <th className="p-4 font-bold border-b border-gray-200">Role Evaluated</th>
                       <th className="p-4 font-bold border-b border-gray-200">Score</th>
+                      <th className="p-4 font-bold border-b border-gray-200">Authenticity</th>
                       <th className="p-4 font-bold border-b border-gray-200">GitHub</th>
                       <th className="p-4 font-bold border-b border-gray-200">Date Processed</th>
                       <th className="p-4 font-bold border-b border-gray-200 rounded-tr-xl text-right">Actions</th>
@@ -431,6 +545,17 @@ export default function App() {
                         <td className="p-4">
                           <span className={`font-bold px-2.5 py-1 rounded-md text-xs shadow-sm ${candidate.score > 75 ? 'bg-green-100 text-green-700 border border-green-200' : candidate.score > 50 ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
                             {candidate.score}%
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`font-bold px-2.5 py-1 rounded-md text-xs shadow-sm ${
+                            (candidate.authenticityScore ?? 100) >= 80
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : (candidate.authenticityScore ?? 100) >= 50
+                              ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                              : 'bg-red-100 text-red-700 border border-red-200'
+                          }`}>
+                            {candidate.authenticityScore ?? 100}%
                           </span>
                         </td>
                         <td className="p-4 text-gray-500">
@@ -498,6 +623,46 @@ export default function App() {
                       <p className="text-xs font-bold text-gray-500 uppercase">AI Summary</p>
                       <p className="text-sm text-gray-800 mt-1">{selectedCandidate.summary || 'No summary available.'}</p>
                     </div>
+                  </div>
+
+                  {/* MODAL ROLE COMPARISON */}
+                  {selectedCandidate.recommendedRoles?.length > 0 && (
+                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                      <p className="text-xs font-bold text-indigo-800 uppercase">Role Comparison & Recommended Roles</p>
+                      <div className="space-y-2">
+                        {selectedCandidate.recommendedRoles.map((roleItem: any, idx: number) => (
+                          <div key={idx} className="bg-white p-2.5 rounded-lg border border-indigo-100 text-xs">
+                            <div className="flex items-center justify-between font-bold text-gray-900">
+                              <span>{roleItem.role}</span>
+                              <span className="text-indigo-700">{roleItem.matchScore}%</span>
+                            </div>
+                            <p className="text-gray-600 mt-0.5">{roleItem.reason}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MODAL AUTHENTICITY & GITHUB FORENSICS */}
+                  <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-800 uppercase">Authenticity & GitHub Forensics</p>
+                      <span className="text-xs font-black text-gray-900">
+                        {selectedCandidate.authenticityScore ?? 100}%
+                      </span>
+                    </div>
+                    {selectedCandidate.githubStats?.topLanguages?.length > 0 && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-bold">Top Languages:</span> {selectedCandidate.githubStats.topLanguages.join(', ')}
+                      </p>
+                    )}
+                    <ul className="space-y-1 text-xs text-gray-700">
+                      {(selectedCandidate.redFlags || ["No major inconsistencies detected."]).map((flag: string, idx: number) => (
+                        <li key={idx} className={isMissingGithubFlag(flag) ? 'text-red-700 font-semibold' : ''}>
+                          • {flag}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                   <div>

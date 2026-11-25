@@ -13,7 +13,21 @@ const candidateSchema = new mongoose.Schema({
     matchedSkills: { type: [String], default: [] },
     missingSkills: { type: [String], default: [] },
     interviewQuestions: { type: [String], default: [] },
-    
+    recommendedRoles: {
+        type: [
+            {
+                role: { type: String, required: true },
+                matchScore: { type: Number, required: true },
+                reason: { type: String, default: "" }
+            }
+        ],
+        default: []
+    },
+
+    resumeText: { type: String, default: '' },
+    authenticityScore: { type: Number, default: 100 },
+    redFlags: { type: [String], default: [] },
+        
     // GitHub API Stats
     githubStats: {
         publicRepos: { type: Number, default: 0 },
